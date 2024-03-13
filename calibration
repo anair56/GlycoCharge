@@ -1,0 +1,81 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+#define OLED_RESET -1    // Reset pin # (-1 bc we share Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+#define potassiumLed 3
+#define phosphateLed 6
+#define sensorPin A1
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(sensorPin, INPUT);
+  pinMode(potassiumLed, OUTPUT);
+  pinMode(phosphateLed, OUTPUT);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;); // Don't proceed, loop forever
+  }
+  display.display(); // Show initial display buffer (splashscreen or cleared screen)
+  delay(1000);       // Pause for 2 seconds
+  display.clearDisplay(); // Clear the buffer
+
+  display.setTextSize(1);      // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE); // Draw white text
+  display.setCursor(0,0);     // Start at top-left corner
+
+  // Begin calibration and display baseline intensities
+  Serial.println("Starting calibration...");
+}
+
+void loop() {
+  // Calibration for potassium LED
+  display.println("Calibrating potassium LED...");
+  float baselineIntensityPotassium = measureBaselineIntensity(potassiumLed);
+  display.print("K: ");
+  display.println(baselineIntensityPotassium, 2);
+  display.print("Baseline intensity for potassium LED: ");
+  display.println(baselineIntensityPotassium, 2);
+
+  delay(2000); // Wait 2 seconds before next calibration
+  
+  // Calibration for phosphate LED
+  display.println("Calibrating phosphate LED...");
+  float baselineIntensityPhosphate = measureBaselineIntensity(phosphateLed);
+  display.print("P: ");
+  display.println(baselineIntensityPhosphate, 2);
+  display.print("Baseline intensity for phosphate LED: ");
+  display.println(baselineIntensityPhosphate, 2);
+
+  display.display(); // Update the display with all data written to the buffer
+  
+  display.println("Calibration complete. Halting...");
+  while(true); // Halt the loop after calibration
+}
+
+float measureBaselineIntensity(int ledPin) {
+  display.print("Turning on LED at pin ");
+  display.println(ledPin);
+  digitalWrite(ledPin, HIGH);  // Turn on the LED
+  delay(500); // Wait for 500 milliseconds for the light output to stabilize
+  
+  float reading = 0;
+  display.println("Measuring light intensity...");
+  for (int i = 0; i < 10; i++) { // Take multiple readings to average
+    reading += analogRead(sensorPin);
+    delay(100); // Short delay between readings
+  }
+  reading /= 10.0; // Calculate the average reading
+  display.print("Average reading: ");
+  display.println(reading);
+
+  digitalWrite(ledPin, LOW);  // Turn off the LED
+  display.println("LED turned off.");
+  
+  return reading; // Return the average light intensity reading
+}
