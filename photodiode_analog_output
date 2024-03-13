@@ -1,0 +1,67 @@
+#include <Wire.h> 
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+
+#define OLED_RESET     4
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+int LED = 3;
+int LED2 = 6;
+int photodiodePin = A1;
+
+void setup() {
+
+  pinMode(LED,OUTPUT);
+  pinMode(LED2,OUTPUT);
+  pinMode(photodiodePin,INPUT);
+
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;);
+  }
+  // Clear the buffer
+  display.clearDisplay();
+
+  // Set text size, color and print a message
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.display();
+}
+
+
+
+void loop() {
+
+  digitalWrite(LED, HIGH);
+  digitalWrite(LED2, HIGH);
+ 
+  int sensorValue = analogRead(photodiodePin); // Read analog value from photodiode
+  
+  // You may need to calibrate this based on your setup and lighting conditions
+  float voltage = sensorValue * (5.0 / 1023.0); // Convert sensor value to voltage (assuming a 5V Arduino)
+
+  display.fillRect(0, 8, SCREEN_WIDTH, 16, SSD1306_BLACK);
+  // Print the new sensor value
+  display.setCursor(0, 8);
+  display.print("Sensor Value: ");
+  display.println(sensorValue);
+  display.print("Voltage: ");
+  display.println(voltage);
+  display.print(randomX(sensorValue));
+  
+  display.display();
+
+  delay(500); // Delay before reading again (adjust as needed)
+
+}
+float randomX(int sensor){ 
+  if (sensor < 300 && sensor > 50){
+     int estGlucose = rand() % 100;
+     estGlucose += 90;
+    }
+  }
