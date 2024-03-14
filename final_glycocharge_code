@@ -7,16 +7,16 @@
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
 #define SCREEN_HEIGHT 32  // OLED display height, in pixels
 
-#define OLED_RESET 4
+#define OLED_RESET -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-int sensorPin = A1;
-int potassiumLed = 3;
+int sensorPin = A0;
+int potassiumLed = 8;
 int phosphateLed = 6;
 
 // Assuming baseline (I0) intensities for both LEDs are predetermined through calibration
-float baselineIntensityPotassium = 0.20; // CHANGE AFTER CALIBRATION
-float baselineIntensityPhosphate = 0.20; 
+float baselineIntensityPotassium = 300; // CHANGE AFTER CALIBRATION
+float baselineIntensityPhosphate = 998.4; 
 
 void setup() {
   Serial.begin(9600);
@@ -61,7 +61,11 @@ void loop() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.print("Avg X: ");
+  display.print("K: ");
+  display.println(xPotassium);
+  display.print("P: ");
+  display.println(xPhosphate);
+  display.print("Avg Gluc: ");
   display.print(averageX);
   display.display();
 
