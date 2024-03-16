@@ -1,0 +1,96 @@
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <math.h> // Math library for power and logarithm functions!! DO NOT FORGET
+
+#define SCREEN_WIDTH 128  // OLED display width, in pixels
+#define SCREEN_HEIGHT 32  // OLED display height, in pixels
+
+#define OLED_RESET -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+int sensorPin = A0;
+int potassiumLed = 8;
+int phosphateLed = 6;
+
+//  baseline (I0) intensities for both LEDs are predetermined through calibration (separate code file)
+float baselineIntensityPotassium = 65.9; // TBD AFTER CALIBRATION TESTING MATRIX
+float baselineIntensityPhosphate = 12000; // ALSO TBD
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(sensorPin, INPUT);
+  pinMode(potassiumLed, OUTPUT);
+  pinMode(phosphateLed, OUTPUT);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;)
+      ; // don't proceed, loop forever
+  }
+  display.setRotation(2);
+}
+
+void loop() {
+  // turn on Potassium LED, take reading, calculate absorbance, and turn off the LED
+  digitalWrite(potassiumLed, HIGH);
+  delay(1000);  // Short delay to stabilize light emission
+  float readingPotassium = analogRead(sensorPin);
+  digitalWrite(potassiumLed, LOW);
+  float absorbancePotassium = calculateAbsorbance(readingPotassium, baselineIntensityPotassium);
+
+  // short delay between LED switches
+  delay(1000);
+
+  // turn on Phosphate LED, take reading, calculate absorbance, and turn off the LED
+  digitalWrite(phosphateLed, HIGH);
+  delay(1000);  // Short delay to stabilize light emission
+  float readingPhosphate = analogRead(sensorPin);
+  digitalWrite(phosphateLed, LOW);
+  float absorbancePhosphate = calculateAbsorbance(readingPhosphate, baselineIntensityPhosphate);
+
+  // Solve for x using the provided equations and absorbance values
+  float xPotassium = solveQuadratic(1.000* pow(10,-5), 0.0015, 0.0081 - absorbancePotassium) + 20;
+  float xPhosphate = solveQuadratic(1.000 * pow(10,-5), 0.0073, 0.2658 - absorbancePhosphate) - 50;
+  // Calculate the average of x-values
+  float averageX = (xPotassium + xPhosphate) / 2.0;
+
+  // Display the average x-value on the OLED
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.print("K: ");
+  display.println(xPotassium);
+  display.print("P: ");
+  display.println(xPhosphate);
+  display.print("Avg Gluc: ");
+  display.print(averageX);
+  display.display();
+
+  // Debugging: Print the average x-value to Serial Monitor
+  Serial.print("Your Predicted Glucose Levels: ");
+  Serial.println(averageX);
+
+  // Add a delay before the next measurement cycle
+  delay(5000); // Delay for 5 seconds
+}
+
+float calculateAbsorbance(float intensity, float baselineIntensity) {
+  // Calculate transmittance
+  float transmittance = intensity / baselineIntensity;
+  // Calculate absorbance using A = -log10(T)
+  float absorbance = -log10(transmittance);
+  return absorbance;
+}
+
+float solveQuadratic(float a, float b, float c) {
+  float discriminant = sqrt(b * b - 4 * a * c);
+  if (discriminant > 0){
+    display.print("error");
+    }
+  float root1 = (-b + discriminant) / (2 * a);
+  return root1; 
+}
+  //
