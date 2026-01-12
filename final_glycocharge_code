@@ -14,7 +14,6 @@ int sensorPin = A0;
 int potassiumLed = 8;
 int phosphateLed = 6;
 
-// Assuming baseline (I0) intensities for both LEDs are predetermined through calibration
 float baselineIntensityPotassium = 300; // CHANGE AFTER CALIBRATION
 float baselineIntensityPhosphate = 998.4; 
 
@@ -32,19 +31,16 @@ void setup() {
 }
 
 void loop() {
-  // Turn on Potassium LED, take reading, calculate absorbance, and turn off the LED
   digitalWrite(potassiumLed, HIGH);
   delay(1000);  // Short delay to stabilize light emission
   float readingPotassium = analogRead(sensorPin);
   digitalWrite(potassiumLed, LOW);
   float absorbancePotassium = calculateAbsorbance(readingPotassium, baselineIntensityPotassium);
 
-  // Short delay between LED switches
   delay(1000);
 
-  // Turn on Phosphate LED, take reading, calculate absorbance, and turn off the LED
   digitalWrite(phosphateLed, HIGH);
-  delay(1000);  // Short delay to stabilize light emission
+  delay(1000);  
   float readingPhosphate = analogRead(sensorPin);
   digitalWrite(phosphateLed, LOW);
   float absorbancePhosphate = calculateAbsorbance(readingPhosphate, baselineIntensityPhosphate);
@@ -69,18 +65,16 @@ void loop() {
   display.print(averageX);
   display.display();
 
-  // Debugging: Print the average x-value to Serial Monitor
+  // debugging
   Serial.print("Your Predicted Glucose Levels: ");
   Serial.println(averageX);
 
-  // Add a delay before the next measurement cycle
   delay(2000); // Delay for 2 seconds
 }
 
 float calculateAbsorbance(float intensity, float baselineIntensity) {
-  // Calculate transmittance
   float transmittance = intensity / baselineIntensity;
-  // Calculate absorbance using A = -log10(T)
+  //  A = -log10(T)
   float absorbance = -log10(transmittance);
   return absorbance;
 }
@@ -93,4 +87,3 @@ float solveQuadratic(float a, float b, float c) {
   float root1 = (-b + discriminant) / (2 * a);
   return root1; 
 }
-  //
